@@ -1,6 +1,7 @@
 use chrono::Utc;
 use clap::Parser;
 use redis::Commands;
+use serde_json::json;
 use taskforge_core::{TaskResult, TaskSpec, TaskStatus};
 
 #[derive(Parser, Debug)]
@@ -53,17 +54,41 @@ fn main() -> anyhow::Result<()> {
 
             println!("Received task {} name={}", task.id, task.name);
 
-            let succeeded = TaskResult {
-                id: task.id,
-                status: TaskStatus::Succeeded,
-                started_at: running.started_at,
-                finished_at: Some(Utc::now()),
-                output: None,
-                error: None,
+            let execution = execute_task(&task);
+
+            let finished_at = Some(Utc::now());
+            let result = match execution {
+                Ok(output) => TaskResult {
+                    id: task.id,
+                    status: TaskStatus::Succeeded,
+                    started_at: running.started_at,
+                    finished_at,
+                    output: Some(output),
+                    error: None,
+                },
+                Err(error) => TaskResult {
+                    id: task.id,
+                    status: TaskStatus::Failed,
+                    started_at: running.started_at,
+                    finished_at,
+                    output: None,
+                    error: Some(error),
+                },
             };
-            let succeeded_payload = serde_json::to_string(&succeeded)?;
-            let _: String = conn.set(result_key, succeeded_payload)?;
+            let result_payload = serde_json::to_string(&result)?;
+            let _: String = conn.set(result_key, result_payload)?;
         }
+    }
+}
+
+fn execute_task(task: &TaskSpec) -> Result<serde_json::Value, String> {
+    match task.name.as_str() {
+        "echo" => Ok(json!({
+            "args": task.args,
+            "kwargs": task.kwargs,
+        })),
+        "fail" => Err("Intentional failure".to_string()),
+        _ => Err(format!("Unknown task: {}", task.name)),
     }
 }
 
