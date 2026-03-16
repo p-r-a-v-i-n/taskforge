@@ -1,6 +1,7 @@
 use chrono::Utc;
 use clap::{Parser, Subcommand};
-use taskforge_core::{RetryPolicy, TaskSpec};
+use redis::Commands;
+use taskforge_core::{RetryPolicy, TaskResult, TaskSpec, TaskStatus};
 use uuid::Uuid;
 
 #[derive(Parser, Debug)]
@@ -32,6 +33,8 @@ enum CommandsCli {
         broker_url: String,
         #[arg(long, default_value = "taskforge.tasks")]
         stream: String,
+        #[arg(long, default_value = "taskforge:result:")]
+        result_prefix: String,
     },
 }
 
@@ -49,6 +52,7 @@ fn main() -> anyhow::Result<()> {
             backoff_seconds,
             broker_url,
             stream,
+            result_prefix,
         } => {
             let args_value: serde_json::Value = serde_json::from_str(&args)
                 .map_err(|e| anyhow::anyhow!("Invalid --args JSON: {e}"))?;
@@ -88,6 +92,18 @@ fn main() -> anyhow::Result<()> {
                 .arg("payload")
                 .arg(payload)
                 .query(&mut conn)?;
+
+            let result = TaskResult {
+                id: task.id,
+                status: TaskStatus::Queued,
+                started_at: None,
+                finished_at: None,
+                output: None,
+                error: None,
+            };
+            let result_key = format!("{}{}", result_prefix, task.id);
+            let result_payload = serde_json::to_string(&result)?;
+            let _: String = conn.set(result_key, result_payload)?;
 
             println!("Enqueued task {} to stream {}", task.id, stream);
         }

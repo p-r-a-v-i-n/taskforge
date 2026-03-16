@@ -5,9 +5,9 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1"
-taskforge-core = { path = "../task-core" }
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4", features = ["derive"] }
 redis = "0.25"
 serde_json = "1"
+taskforge-core = { path = "../task-core" }
 uuid = { version = "1", features = ["v4"] }

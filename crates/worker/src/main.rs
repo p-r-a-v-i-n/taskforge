@@ -1,5 +1,7 @@
+use chrono::Utc;
 use clap::Parser;
-use taskforge_core::TaskSpec;
+use redis::Commands;
+use taskforge_core::{TaskResult, TaskSpec, TaskStatus};
 
 #[derive(Parser, Debug)]
 #[command(name = "taskforge-worker")]
@@ -13,6 +15,8 @@ struct Cli {
     last_id: String,
     #[arg(long, default_value = "5000")]
     block_ms: u64,
+    #[arg(long, default_value = "taskforge:result:")]
+    result_prefix: String,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -35,7 +39,30 @@ fn main() -> anyhow::Result<()> {
             last_id = id.clone();
             let task: TaskSpec = serde_json::from_str(&payload)
                 .map_err(|e| anyhow::anyhow!("Invalid task payload JSON: {e}"))?;
+            let result_key = format!("{}{}", cli.result_prefix, task.id);
+            let running = TaskResult {
+                id: task.id,
+                status: TaskStatus::Running,
+                started_at: Some(Utc::now()),
+                finished_at: None,
+                output: None,
+                error: None,
+            };
+            let running_payload = serde_json::to_string(&running)?;
+            let _: String = conn.set(&result_key, running_payload)?;
+
             println!("Received task {} name={}", task.id, task.name);
+
+            let succeeded = TaskResult {
+                id: task.id,
+                status: TaskStatus::Succeeded,
+                started_at: running.started_at,
+                finished_at: Some(Utc::now()),
+                output: None,
+                error: None,
+            };
+            let succeeded_payload = serde_json::to_string(&succeeded)?;
+            let _: String = conn.set(result_key, succeeded_payload)?;
         }
     }
 }
