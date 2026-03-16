@@ -2,6 +2,7 @@ use chrono::Utc;
 use clap::Parser;
 use redis::Commands;
 use serde_json::json;
+use std::collections::HashMap;
 use taskforge_core::{TaskResult, TaskSpec, TaskStatus};
 
 #[derive(Parser, Debug)]
@@ -54,7 +55,8 @@ fn main() -> anyhow::Result<()> {
 
             println!("Received task {} name={}", task.id, task.name);
 
-            let execution = execute_task(&task);
+            let registry = build_registry();
+            let execution = execute_task(&task, &registry);
 
             let finished_at = Some(Utc::now());
             let result = match execution {
@@ -81,15 +83,61 @@ fn main() -> anyhow::Result<()> {
     }
 }
 
-fn execute_task(task: &TaskSpec) -> Result<serde_json::Value, String> {
-    match task.name.as_str() {
-        "echo" => Ok(json!({
-            "args": task.args,
-            "kwargs": task.kwargs,
-        })),
-        "fail" => Err("Intentional failure".to_string()),
-        _ => Err(format!("Unknown task: {}", task.name)),
+fn execute_task(
+    task: &TaskSpec,
+    registry: &HashMap<String, fn(&TaskSpec) -> Result<serde_json::Value, String>>,
+) -> Result<serde_json::Value, String> {
+    match registry.get(&task.name) {
+        Some(handler) => handler(task),
+        None => Err(format!("Unknown task: {}", task.name)),
     }
+}
+
+fn build_registry() -> HashMap<String, fn(&TaskSpec) -> Result<serde_json::Value, String>> {
+    let mut registry: HashMap<String, fn(&TaskSpec) -> Result<serde_json::Value, String>> =
+        HashMap::new();
+    registry.insert("echo".to_string(), task_echo);
+    registry.insert("add".to_string(), task_add);
+    registry.insert("sleep".to_string(), task_sleep);
+    registry
+}
+
+fn task_echo(task: &TaskSpec) -> Result<serde_json::Value, String> {
+    Ok(json!({
+        "args": task.args,
+        "kwargs": task.kwargs,
+    }))
+}
+
+fn task_add(task: &TaskSpec) -> Result<serde_json::Value, String> {
+    let args = task
+        .args
+        .as_array()
+        .ok_or_else(|| "args must be an array".to_string())?;
+    if args.len() < 2 {
+        return Err("add requires at least 2 numeric args".to_string());
+    }
+    let mut sum = 0.0f64;
+    for value in args {
+        let number = value
+            .as_f64()
+            .ok_or_else(|| "add args must be numbers".to_string())?;
+        sum += number;
+    }
+    Ok(json!({ "sum": sum }))
+}
+
+fn task_sleep(task: &TaskSpec) -> Result<serde_json::Value, String> {
+    let kwargs = task
+        .kwargs
+        .as_object()
+        .ok_or_else(|| "kwargs must be an object".to_string())?;
+    let seconds = kwargs
+        .get("seconds")
+        .and_then(|v| v.as_u64())
+        .ok_or_else(|| "sleep requires kwargs.seconds (u64)".to_string())?;
+    std::thread::sleep(std::time::Duration::from_secs(seconds));
+    Ok(json!({ "slept_seconds": seconds }))
 }
 
 fn extract_payload(reply: redis::Value) -> Option<(String, String)> {
