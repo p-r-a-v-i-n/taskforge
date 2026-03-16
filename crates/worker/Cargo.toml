@@ -1,7 +1,7 @@
 [package]
-name = "celeryrs-worker"
+name = "taskforge-worker"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-celeryrs-core = { path = "../task-core" }
+taskforge-core = { path = "../task-core" }

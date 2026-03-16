@@ -1,5 +1,5 @@
 [package]
-name = "celeryrs-core"
+name = "taskforge-core"
 version = "0.1.0"
 edition = "2021"
 

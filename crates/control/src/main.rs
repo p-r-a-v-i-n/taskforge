@@ -1,12 +1,12 @@
 use chrono::Utc;
 use clap::{Parser, Subcommand};
-use celeryrs_core::{RetryPolicy, TaskSpec};
+use taskforge_core::{RetryPolicy, TaskSpec};
 use redis::Commands;
 use uuid::Uuid;
 
 #[derive(Parser, Debug)]
-#[command(name = "celeryrs-control")]
-#[command(about = "Control plane CLI for celeryrs", long_about = None)]
+#[command(name = "taskforge-control")]
+#[command(about = "Control plane CLI for taskforge", long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: CommandsCli,
@@ -31,7 +31,7 @@ enum CommandsCli {
         backoff_seconds: u64,
         #[arg(long)]
         broker_url: String,
-        #[arg(long, default_value = "celeryrs.tasks")]
+        #[arg(long, default_value = "taskforge.tasks")]
         stream: String,
     },
 }
