@@ -27,3 +27,9 @@ print(handle.id)
 ## Notes
 - This is an MVP adapter (publish-only). Workers still run in Rust.
 - The default stream is `taskforge.tasks`.
+
+## Demo Script
+
+```bash
+python python/adapter/examples/enqueue_demo.py
+```
