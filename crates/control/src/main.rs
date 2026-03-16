@@ -1,7 +1,6 @@
 use chrono::Utc;
 use clap::{Parser, Subcommand};
 use taskforge_core::{RetryPolicy, TaskSpec};
-use redis::Commands;
 use uuid::Uuid;
 
 #[derive(Parser, Debug)]

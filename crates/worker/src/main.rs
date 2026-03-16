@@ -1,5 +1,4 @@
 use clap::Parser;
-use redis::Commands;
 use taskforge_core::TaskSpec;
 
 #[derive(Parser, Debug)]
