@@ -3,6 +3,7 @@ use clap::Parser;
 use redis::Commands;
 use serde_json::json;
 use std::collections::HashMap;
+use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 use taskforge_core::{TaskResult, TaskSpec, TaskStatus};
@@ -27,6 +28,8 @@ fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     let mut conn = redis::Client::open(cli.broker_url)?.get_connection()?;
     let mut last_id = cli.last_id;
+
+    let registry = build_registry();
 
     loop {
         let reply: redis::Value = redis::cmd("XREAD")
@@ -57,8 +60,7 @@ fn main() -> anyhow::Result<()> {
 
             println!("Received task {} name={}", task.id, task.name);
 
-            let registry = build_registry();
-            let execution = execute_task(&task, &registry);
+            let execution = execute_task_with_timeout(&task, &registry);
 
             let finished_at = Some(Utc::now());
             match execution {
@@ -130,6 +132,51 @@ fn main() -> anyhow::Result<()> {
                         let _: String = conn.set(result_key, result_payload)?;
                     }
                 }
+                Err(TaskFailure::Timeout(secs)) => {
+                    let error = format!("Task timed out after {}s", secs);
+                    let should_retry = task.retry.attempt < task.retry.max_attempts;
+                    if should_retry {
+                        let result = TaskResult {
+                            id: task.id,
+                            status: TaskStatus::Retrying,
+                            started_at: running.started_at,
+                            finished_at,
+                            output: None,
+                            error: Some(error.clone()),
+                        };
+                        let result_payload = serde_json::to_string(&result)?;
+                        let _: String = conn.set(&result_key, result_payload)?;
+
+                        let backoff = task.retry.backoff_seconds * (task.retry.attempt as u64 + 1);
+                        if backoff > 0 {
+                            thread::sleep(Duration::from_secs(backoff));
+                        }
+
+                        let mut retry_task = task.clone();
+                        retry_task.retry.attempt += 1;
+                        retry_task.created_at = Utc::now();
+                        retry_task.eta = None;
+                        let retry_payload = serde_json::to_string(&retry_task)?;
+
+                        let _id: String = redis::cmd("XADD")
+                            .arg(&cli.stream)
+                            .arg("*")
+                            .arg("payload")
+                            .arg(retry_payload)
+                            .query(&mut conn)?;
+                    } else {
+                        let result = TaskResult {
+                            id: task.id,
+                            status: TaskStatus::Failed,
+                            started_at: running.started_at,
+                            finished_at,
+                            output: None,
+                            error: Some(error),
+                        };
+                        let result_payload = serde_json::to_string(&result)?;
+                        let _: String = conn.set(result_key, result_payload)?;
+                    }
+                }
             }
         }
     }
@@ -139,6 +186,7 @@ fn main() -> anyhow::Result<()> {
 enum TaskFailure {
     UnknownTask(String),
     Execution(String),
+    Timeout(u64),
 }
 
 fn execute_task(
@@ -148,6 +196,33 @@ fn execute_task(
     match registry.get(&task.name) {
         Some(handler) => handler(task).map_err(TaskFailure::Execution),
         None => Err(TaskFailure::UnknownTask(task.name.clone())),
+    }
+}
+
+fn execute_task_with_timeout(
+    task: &TaskSpec,
+    registry: &HashMap<String, fn(&TaskSpec) -> Result<serde_json::Value, String>>,
+) -> Result<serde_json::Value, TaskFailure> {
+    match task.timeout_seconds {
+        Some(timeout) => {
+            let (tx, rx) = mpsc::channel();
+            let task_clone = task.clone();
+            let registry_clone = registry.clone();
+
+            thread::spawn(move || {
+                let result = execute_task(&task_clone, &registry_clone);
+                let _ = tx.send(result);
+            });
+
+            match rx.recv_timeout(Duration::from_secs(timeout)) {
+                Ok(result) => result,
+                Err(mpsc::RecvTimeoutError::Timeout) => Err(TaskFailure::Timeout(timeout)),
+                Err(_) => Err(TaskFailure::Execution(
+                    "Worker execution channel closed".to_string(),
+                )),
+            }
+        }
+        None => execute_task(task, registry),
     }
 }
 

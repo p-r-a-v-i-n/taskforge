@@ -30,6 +30,8 @@ enum CommandsCli {
         #[arg(long, default_value = "5")]
         backoff_seconds: u64,
         #[arg(long)]
+        timeout_seconds: Option<u64>,
+        #[arg(long)]
         broker_url: String,
         #[arg(long, default_value = "taskforge.tasks")]
         stream: String,
@@ -58,6 +60,7 @@ fn main() -> anyhow::Result<()> {
             max_attempts,
             attempt,
             backoff_seconds,
+            timeout_seconds,
             broker_url,
             stream,
             result_prefix,
@@ -86,7 +89,7 @@ fn main() -> anyhow::Result<()> {
                     backoff_seconds,
                 },
                 eta: None,
-                timeout_seconds: None,
+                timeout_seconds,
                 idempotency_key: None,
                 created_at: Utc::now(),
             };
