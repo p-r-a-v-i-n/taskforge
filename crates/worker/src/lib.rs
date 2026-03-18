@@ -7,7 +7,7 @@ use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
-use taskforge_core::{TaskResult, TaskSpec, TaskStatus};
+use rustly_dispatch_core::{TaskResult, TaskSpec, TaskStatus};
 use tokio::sync::Semaphore;
 
 #[derive(Debug, Clone)]
@@ -404,7 +404,7 @@ fn extract_payloads(reply: redis::Value) -> Vec<(String, String)> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use taskforge_core::RetryPolicy;
+    use rustly_dispatch_core::RetryPolicy;
     use uuid::Uuid;
 
     fn make_task(name: &str) -> TaskSpec {
@@ -430,11 +430,11 @@ mod tests {
     async fn task_echo_returns_args_kwargs() {
         let mut task = make_task("echo");
         task.args = serde_json::json!(["hello"]);
-        task.kwargs = serde_json::json!({"from": "taskforge"});
+        task.kwargs = serde_json::json!({"from": "rustly-dispatch"});
 
         let result = task_echo(task).await.unwrap();
         assert_eq!(result["args"][0], "hello");
-        assert_eq!(result["kwargs"]["from"], "taskforge");
+        assert_eq!(result["kwargs"]["from"], "rustly-dispatch");
     }
 
     #[tokio::test]

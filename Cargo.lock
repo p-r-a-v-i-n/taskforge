@@ -1637,6 +1637,45 @@ dependencies = [
 ]
 
 [[package]]
+name = "rustly-dispatch-control"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "clap",
+ "redis",
+ "rustly-dispatch-core",
+ "serde_json",
+ "uuid",
+]
+
+[[package]]
+name = "rustly-dispatch-core"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "serde",
+ "serde_json",
+ "uuid",
+]
+
+[[package]]
+name = "rustly-dispatch-worker"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "clap",
+ "futures",
+ "redis",
+ "rustly-dispatch-core",
+ "serde_json",
+ "testcontainers",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
 name = "rustversion"
 version = "1.0.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1928,45 +1967,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "taskforge-control"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "chrono",
- "clap",
- "redis",
- "serde_json",
- "taskforge-core",
- "uuid",
-]
-
-[[package]]
-name = "taskforge-core"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "serde",
- "serde_json",
- "uuid",
-]
-
-[[package]]
-name = "taskforge-worker"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "chrono",
- "clap",
- "futures",
- "redis",
- "serde_json",
- "taskforge-core",
- "testcontainers",
- "tokio",
- "uuid",
 ]
 
 [[package]]

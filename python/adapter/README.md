@@ -1,7 +1,7 @@
-# Taskforge Python Adapter
+# Rustly Dispatch Python Adapter
 
 A minimal Celery-like API that publishes tasks to Redis Streams using the
-Taskforge task schema.
+Rustly Dispatch task schema.
 
 ## Install (editable)
 
@@ -12,9 +12,9 @@ pip install -e python/adapter
 ## Quick Start
 
 ```python
-from taskforge import RetryPolicy, TaskforgeApp
+from rustly_dispatch import RetryPolicy, RustlyDispatchApp
 
-app = TaskforgeApp(
+app = RustlyDispatchApp(
     broker_url="redis://127.0.0.1:6379",
     default_retry_policy=RetryPolicy(max_attempts=3, backoff_seconds=2),
     default_timeout_seconds=10,
@@ -30,7 +30,7 @@ print(handle.id)
 
 ## Notes
 - This is an MVP adapter (publish-only). Workers still run in Rust.
-- The default stream is `taskforge.tasks`.
+- The default stream is `rustly-dispatch.tasks`.
 
 ## Retry Policy Override
 

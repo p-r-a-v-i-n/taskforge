@@ -1,6 +1,6 @@
 use redis::AsyncCommands;
-use taskforge_core::{RetryPolicy, TaskResult, TaskSpec, TaskStatus};
-use taskforge_worker::{default_registry, run_worker_once, WorkerConfig};
+use rustly_dispatch_core::{RetryPolicy, TaskResult, TaskSpec, TaskStatus};
+use rustly_dispatch_worker::{default_registry, run_worker_once, WorkerConfig};
 use testcontainers::core::ContainerPort;
 use testcontainers::runners::AsyncRunner;
 use testcontainers::GenericImage;
@@ -39,12 +39,12 @@ async fn redis_echo_task_succeeds() -> anyhow::Result<()> {
 
     let config = WorkerConfig {
         broker_url: redis_url,
-        stream: "taskforge.tasks".to_string(),
+        stream: "rustly-dispatch.tasks".to_string(),
         last_id: "0".to_string(),
         block_ms: 100,
         prefetch: 10,
         concurrency: 1,
-        result_prefix: "taskforge:result:".to_string(),
+        result_prefix: "rustly-dispatch:result:".to_string(),
         result_ttl_seconds: 60,
     };
 
@@ -53,7 +53,7 @@ async fn redis_echo_task_succeeds() -> anyhow::Result<()> {
 
     let mut task = make_task("echo");
     task.args = serde_json::json!(["hello"]);
-    task.kwargs = serde_json::json!({"from": "taskforge"});
+    task.kwargs = serde_json::json!({"from": "rustly-dispatch"});
 
     let payload = serde_json::to_string(&task)?;
     let _: String = redis::cmd("XADD")
@@ -90,12 +90,12 @@ async fn redis_add_task_retries_then_fails() -> anyhow::Result<()> {
 
     let config = WorkerConfig {
         broker_url: redis_url,
-        stream: "taskforge.tasks".to_string(),
+        stream: "rustly-dispatch.tasks".to_string(),
         last_id: "0".to_string(),
         block_ms: 100,
         prefetch: 10,
         concurrency: 1,
-        result_prefix: "taskforge:result:".to_string(),
+        result_prefix: "rustly-dispatch:result:".to_string(),
         result_ttl_seconds: 60,
     };
 

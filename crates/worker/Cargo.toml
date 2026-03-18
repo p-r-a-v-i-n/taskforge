@@ -1,5 +1,5 @@
 [package]
-name = "taskforge-worker"
+name = "rustly-dispatch-worker"
 version = "0.1.0"
 edition = "2021"
 
@@ -10,7 +10,7 @@ clap = { version = "4", features = ["derive"] }
 futures = "0.3"
 redis = { version = "0.25", features = ["tokio-comp", "connection-manager"] }
 serde_json = "1"
-taskforge-core = { path = "../task-core" }
+rustly-dispatch-core = { path = "../task-core" }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
 uuid = { version = "1", features = ["v4"] }
 

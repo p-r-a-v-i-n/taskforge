@@ -1,13 +1,13 @@
 use clap::Parser;
-use taskforge_worker::{run_worker, WorkerConfig};
+use rustly_dispatch_worker::{run_worker, WorkerConfig};
 
 #[derive(Parser, Debug)]
-#[command(name = "taskforge-worker")]
-#[command(about = "Taskforge worker (Redis Streams)", long_about = None)]
+#[command(name = "rustly-dispatch-worker")]
+#[command(about = "Rustly Dispatch worker (Redis Streams)", long_about = None)]
 struct Cli {
     #[arg(long)]
     broker_url: String,
-    #[arg(long, default_value = "taskforge.tasks")]
+    #[arg(long, default_value = "rustly-dispatch.tasks")]
     stream: String,
     #[arg(long, default_value = "$")]
     last_id: String,
@@ -17,7 +17,7 @@ struct Cli {
     prefetch: u64,
     #[arg(long, default_value = "8")]
     concurrency: usize,
-    #[arg(long, default_value = "taskforge:result:")]
+    #[arg(long, default_value = "rustly-dispatch:result:")]
     result_prefix: String,
     #[arg(long, default_value = "86400")]
     result_ttl_seconds: u64,

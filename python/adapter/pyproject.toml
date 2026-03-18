@@ -3,12 +3,12 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "taskforge"
+name = "rustly-dispatch"
 version = "0.1.0"
-description = "Taskforge Python adapter (Celery-like API)"
+description = "Rustly Dispatch Python adapter (Celery-like API)"
 requires-python = ">=3.9"
 dependencies = ["redis>=5.0.0"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["taskforge*"]
+include = ["rustly_dispatch*"]

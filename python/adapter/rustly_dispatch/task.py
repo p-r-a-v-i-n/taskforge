@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Optional, Union
 
-from .client import RetryPolicy, TaskforgeClient, TaskHandle
+from .client import RetryPolicy, RustlyDispatchClient, TaskHandle
 
 
 @dataclass
 class TaskDefinition:
     name: str
-    client: TaskforgeClient
+    client: RustlyDispatchClient
     default_queue: str = "default"
     default_retry_policy: Optional[RetryPolicy] = None
     default_timeout_seconds: Optional[int] = None
@@ -47,16 +47,16 @@ class TaskDefinition:
         )
 
 
-class TaskforgeApp:
+class RustlyDispatchApp:
     def __init__(
         self,
         broker_url: str,
-        stream: str = "taskforge.tasks",
+        stream: str = "rustly-dispatch.tasks",
         default_queue: str = "default",
         default_retry_policy: Optional[RetryPolicy] = None,
         default_timeout_seconds: Optional[int] = None,
     ) -> None:
-        self.client = TaskforgeClient(broker_url, stream=stream)
+        self.client = RustlyDispatchClient(broker_url, stream=stream)
         self.default_queue = default_queue
         self.default_retry_policy = default_retry_policy
         self.default_timeout_seconds = default_timeout_seconds

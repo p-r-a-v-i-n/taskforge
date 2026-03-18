@@ -26,8 +26,8 @@ class RetryPolicy:
         }
 
 
-class TaskforgeClient:
-    def __init__(self, broker_url: str, stream: str = "taskforge.tasks") -> None:
+class RustlyDispatchClient:
+    def __init__(self, broker_url: str, stream: str = "rustly-dispatch.tasks") -> None:
         self._redis = redis.Redis.from_url(broker_url, decode_responses=True)
         self._stream = stream
 

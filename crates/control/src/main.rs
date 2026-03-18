@@ -1,12 +1,12 @@
 use chrono::Utc;
 use clap::{Parser, Subcommand};
 use redis::Commands;
-use taskforge_core::{RetryPolicy, TaskResult, TaskSpec, TaskStatus};
+use rustly_dispatch_core::{RetryPolicy, TaskResult, TaskSpec, TaskStatus};
 use uuid::Uuid;
 
 #[derive(Parser, Debug)]
-#[command(name = "taskforge-control")]
-#[command(about = "Control plane CLI for taskforge", long_about = None)]
+#[command(name = "rustly-dispatch-control")]
+#[command(about = "Control plane CLI for Rustly Dispatch", long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: CommandsCli,
@@ -33,9 +33,9 @@ enum CommandsCli {
         timeout_seconds: Option<u64>,
         #[arg(long)]
         broker_url: String,
-        #[arg(long, default_value = "taskforge.tasks")]
+        #[arg(long, default_value = "rustly-dispatch.tasks")]
         stream: String,
-        #[arg(long, default_value = "taskforge:result:")]
+        #[arg(long, default_value = "rustly-dispatch:result:")]
         result_prefix: String,
         #[arg(long, default_value = "86400")]
         result_ttl_seconds: u64,
@@ -45,7 +45,7 @@ enum CommandsCli {
         id: String,
         #[arg(long)]
         broker_url: String,
-        #[arg(long, default_value = "taskforge:result:")]
+        #[arg(long, default_value = "rustly-dispatch:result:")]
         result_prefix: String,
     },
 }
