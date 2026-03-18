@@ -22,6 +22,8 @@ struct Cli {
     block_ms: u64,
     #[arg(long, default_value = "taskforge:result:")]
     result_prefix: String,
+    #[arg(long, default_value = "86400")]
+    result_ttl_seconds: u64,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -57,6 +59,9 @@ fn main() -> anyhow::Result<()> {
             };
             let running_payload = serde_json::to_string(&running)?;
             let _: String = conn.set(&result_key, running_payload)?;
+            if cli.result_ttl_seconds > 0 {
+                let _: i32 = conn.expire(&result_key, cli.result_ttl_seconds as i64)?;
+            }
 
             println!("Received task {} name={}", task.id, task.name);
 
@@ -74,7 +79,10 @@ fn main() -> anyhow::Result<()> {
                         error: None,
                     };
                     let result_payload = serde_json::to_string(&result)?;
-                    let _: String = conn.set(result_key, result_payload)?;
+                    let _: String = conn.set(&result_key, result_payload)?;
+                    if cli.result_ttl_seconds > 0 {
+                        let _: i32 = conn.expire(&result_key, cli.result_ttl_seconds as i64)?;
+                    }
                 }
                 Err(TaskFailure::UnknownTask(name)) => {
                     let result = TaskResult {
@@ -86,7 +94,10 @@ fn main() -> anyhow::Result<()> {
                         error: Some(format!("Unknown task: {}", name)),
                     };
                     let result_payload = serde_json::to_string(&result)?;
-                    let _: String = conn.set(result_key, result_payload)?;
+                    let _: String = conn.set(&result_key, result_payload)?;
+                    if cli.result_ttl_seconds > 0 {
+                        let _: i32 = conn.expire(&result_key, cli.result_ttl_seconds as i64)?;
+                    }
                 }
                 Err(TaskFailure::Execution(error)) => {
                     let should_retry = task.retry.attempt < task.retry.max_attempts;
@@ -101,6 +112,10 @@ fn main() -> anyhow::Result<()> {
                         };
                         let result_payload = serde_json::to_string(&result)?;
                         let _: String = conn.set(&result_key, result_payload)?;
+                        if cli.result_ttl_seconds > 0 {
+                            let _: i32 =
+                                conn.expire(&result_key, cli.result_ttl_seconds as i64)?;
+                        }
 
                         let backoff = task.retry.backoff_seconds * (task.retry.attempt as u64 + 1);
                         if backoff > 0 {
@@ -129,7 +144,10 @@ fn main() -> anyhow::Result<()> {
                             error: Some(error),
                         };
                         let result_payload = serde_json::to_string(&result)?;
-                        let _: String = conn.set(result_key, result_payload)?;
+                        let _: String = conn.set(&result_key, result_payload)?;
+                        if cli.result_ttl_seconds > 0 {
+                            let _: i32 = conn.expire(&result_key, cli.result_ttl_seconds as i64)?;
+                        }
                     }
                 }
                 Err(TaskFailure::Timeout(secs)) => {
@@ -174,7 +192,10 @@ fn main() -> anyhow::Result<()> {
                             error: Some(error),
                         };
                         let result_payload = serde_json::to_string(&result)?;
-                        let _: String = conn.set(result_key, result_payload)?;
+                        let _: String = conn.set(&result_key, result_payload)?;
+                        if cli.result_ttl_seconds > 0 {
+                            let _: i32 = conn.expire(&result_key, cli.result_ttl_seconds as i64)?;
+                        }
                     }
                 }
             }

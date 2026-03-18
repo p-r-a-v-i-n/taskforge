@@ -37,6 +37,8 @@ enum CommandsCli {
         stream: String,
         #[arg(long, default_value = "taskforge:result:")]
         result_prefix: String,
+        #[arg(long, default_value = "86400")]
+        result_ttl_seconds: u64,
     },
     Result {
         #[arg(long)]
@@ -64,6 +66,7 @@ fn main() -> anyhow::Result<()> {
             broker_url,
             stream,
             result_prefix,
+            result_ttl_seconds,
         } => {
             let args_value: serde_json::Value = serde_json::from_str(&args)
                 .map_err(|e| anyhow::anyhow!("Invalid --args JSON: {e}"))?;
@@ -114,7 +117,10 @@ fn main() -> anyhow::Result<()> {
             };
             let result_key = format!("{}{}", result_prefix, task.id);
             let result_payload = serde_json::to_string(&result)?;
-            let _: String = conn.set(result_key, result_payload)?;
+            let _: String = conn.set(&result_key, result_payload)?;
+            if result_ttl_seconds > 0 {
+                let _: i32 = conn.expire(&result_key, result_ttl_seconds as i64)?;
+            }
 
             println!("Enqueued task {} to stream {}", task.id, stream);
         }
