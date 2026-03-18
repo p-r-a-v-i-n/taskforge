@@ -1,4 +1,4 @@
-from .client import TaskforgeClient
+from .client import RetryPolicy, TaskforgeClient
 from .task import TaskforgeApp
 
-__all__ = ["TaskforgeClient", "TaskforgeApp"]
+__all__ = ["RetryPolicy", "TaskforgeClient", "TaskforgeApp"]
